@@ -95,7 +95,7 @@ int main (int argc, char *argv[])
 
     /* Retrouver l'@ du client */
     inet_ntop(AF_INET6, &(cli_addr.sin6_addr), client_addr_ipv6, 100);
-    printf("Incoming connection from client having IPv6 address: %s\n",client_addr_ipv6);
+    printf("Connection from IPv6 Client / IP - Address: %s\n",client_addr_ipv6);
 
     /* Envoyer Bonjour au client */
     if ( (n= writen (clientSocket, "Bonjour\n", strlen("Bonjour\n")) ) != strlen("Bonjour\n"))  {

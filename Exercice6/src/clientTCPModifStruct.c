@@ -45,6 +45,7 @@ int main (int argc, char *argv[])
 {
     int serverSocket, servlen, n, retread;
     struct sockaddr_in6  serv_addr;
+    char server_addr_ipv6[100];
     char fromServer[MAXLINE];
     char fromUser[MAXLINE];
     struct hostent *hp;  
@@ -75,9 +76,10 @@ int main (int argc, char *argv[])
     }
 
     serv_addr.sin6_addr = * ((struct in6_addr *)(hp->h_addr));
-    //printf ("IP address: %s\n", inet6_ntoa (serv_addr.sin6_addr));
-
-   
+    
+    
+    inet_ntop(AF_INET6, &(serv_addr.sin6_addr), server_addr_ipv6, 100);
+    printf ("Server IP address: %s\n", server_addr_ipv6);
     /*
     * Ouvrir socket (socket STREAM)
     */
