@@ -77,19 +77,19 @@ int main (int argc, char *argv[])
 
 
   n= send (serverSocket, "zzzzzzzzzzzz", 12,0);
-  printf(" ecriture de %d \n", n);
+  printf(" ecriture zzzzzzzzzzzz de %d \n", n);
   sleep(5);
 
   n= send (serverSocket, "abc", 3, MSG_OOB);
-   printf(" ecriture de %d de OOB\n", n);
+   printf(" ecriture abc de %d de OOB\n", n);
   sleep(5);
 
  n= send (serverSocket, "wwwwwwwwwwww", 12,0);
-  printf(" ecriture de %d \n", n);
+  printf(" ecriture wwwwwwwwwwww de %d \n", n);
   sleep(5);
 
  n= send (serverSocket, "def", 3, MSG_OOB);
-   printf(" ecriture de %d de OOB\n", n);
+   printf(" ecriture def de %d de OOB\n", n);
   sleep(5);
 
   close(serverSocket);

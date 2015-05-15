@@ -20,8 +20,8 @@ CFLAGS =
 LIB = 
 
 #nom de l executable
-SERVER = icmpd
-CLIENT = client
+SERVER = serverUrgentTCP
+CLIENT = clientUrgentTCP
 
 
 #######################
@@ -30,7 +30,7 @@ CLIENT = client
 
 
 #definition de la cible a reconstruire
-all : $(DEST)$(SERVER)
+all : $(DEST)$(SERVER) $(DEST)$(CLIENT)
 
 #programme server
 $(DEST)$(SERVER) : $(LISTE) $(SRC)$(SERVER).c

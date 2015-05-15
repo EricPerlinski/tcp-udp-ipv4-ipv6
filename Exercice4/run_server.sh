@@ -1,3 +1,3 @@
 #!/bin/sh 
 
-xterm -e ./bin/icmpd 8000 &
+./bin/serverUrgentTCP 8004
