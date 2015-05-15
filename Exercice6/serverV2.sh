@@ -1,3 +1,3 @@
 #!/bin/sh 
 
-./bin/serverTCPGetAddrInfo
+./bin/serverTCPGetAddrInfo 8001
