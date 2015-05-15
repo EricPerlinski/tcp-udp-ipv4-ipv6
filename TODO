@@ -11,12 +11,14 @@ Exercice3 :
 	Need Wireshark traces
 
 Exercice4 : 
-
-	All TODO
+	
+	_ analyze & explain the behaviour of the server.
+	_ Explain what you can see in the TCP part with wireshark. 
+		(+ infos related to sig_urg and oob data).  
 
 Exercice5 :
 
-	All TODO
+	Done
 
 Exercice6 :
 
