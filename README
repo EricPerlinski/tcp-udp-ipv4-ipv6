@@ -1,0 +1,4 @@
+From here, you can go through all the different directories.
+
+Each directory contains one exercice from the TP3. There's a makefile for each directory and a shell script in order to launch it easily.
+
