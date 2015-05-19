@@ -27,4 +27,7 @@ Exercice6 :
 
 Exercice7 :
 
-	All TODO
+	-disconnect
+	-ipv6
+	-point to point transmission from the server
+	-(optional) the client can create another group
