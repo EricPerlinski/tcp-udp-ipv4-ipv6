@@ -6,7 +6,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#define SERV_PORT 2334
+#define SERV_PORT 2335
 #define MAX_CLIENT 20
 #define BUFSIZE 1500
 
