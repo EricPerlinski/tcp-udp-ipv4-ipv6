@@ -13,7 +13,7 @@
 #include     <strings.h>
 #include 	 <fcntl.h>
 #include     <signal.h>
-#define SERV_PORT 2326
+#define SERV_PORT 2334
 #define PORT 8000
 #define localhost "127.0.0.1"
 #define GROUP "239.137.194.111"
@@ -43,7 +43,7 @@ struct hostent *hp;
 int ttl;	
 socklen_t len=sizeof(serv_addr);
 int jeton=0;
-
+int emetteurTab[FD_SETSIZE];
 int main(int argc,char *argv[])
 {
 
@@ -97,11 +97,6 @@ int main(int argc,char *argv[])
 
 }
 
-void sig_urg(int sig)
-{
-  jeton=1;//tu es le leader maintenant
-  printf("i got the token\n");
-}
 
 void participateRequest(int *participate,int serverSocket,int *jeton)
 {
@@ -139,25 +134,46 @@ void participateRequest(int *participate,int serverSocket,int *jeton)
 
 void waitingMessage(int socketRecepteur)
 {
-	signal(SIGURG,sig_urg);
-	fcntl(serverSocket, F_SETOWN, getpid());
-	for(;;)
+	fd_set rset,pset;
+	int i=0;
+	for(i=0;i<FD_SETSIZE;i++)
 	{
-		int cnt,len_r=sizeof(receveur_addr);
-		char buf[100]="\0";
-		cnt=recvfrom(socketRecepteur,buf,sizeof(buf),0,(struct sockaddr *)&receveur_addr,&len_r);
-		if ((strcmp(buf,"fin") == 0))
+		emetteurTab[i]=-1;
+	}
+	FD_ZERO(&rset);
+	FD_ZERO(&pset);
+	FD_SET(serverSocket,&rset);
+	FD_SET(socketRecepteur,&rset);
+	int nbr=0;
+	int goOn=1;
+	int maxfd=FD_SETSIZE;
+	while (goOn)
+	{
+		pset=rset;
+		nbr=select(maxfd, &pset, NULL , NULL , NULL);
+		if(nbr>0)
 		{
-			return;
-		}
-		if(cnt<0)
-		{
-			perror("probleme recvfrom");
-			exit(1);
-		}
-		else
-		{
-			printf("%s\n",buf);
+			if(FD_ISSET(socketRecepteur,&pset))
+			{
+				int cnt,len_r=sizeof(receveur_addr);
+				char buf[100]="\0";
+				cnt=recvfrom(socketRecepteur,buf,sizeof(buf),0,(struct sockaddr *)&receveur_addr,&len_r);
+				printf("%s\n",buf);
+			}
+			else if(FD_ISSET(serverSocket,&pset))
+			{
+				int num;
+				char buffer[200]="\0";
+				if (num = recv(serverSocket, buffer,sizeof(buffer),0)!= -1)
+				{
+					if (strcmp(buffer,"jeton")==0)
+					{
+						printf("%s\n",buffer);
+						goOn=0;
+						jeton=1;
+					}
+				}
+			}
 		}
 	}
 }

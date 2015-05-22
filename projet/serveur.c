@@ -6,7 +6,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#define SERV_PORT 2326
+#define SERV_PORT 2334
 #define MAX_CLIENT 20
 #define BUFSIZE 1500
 
@@ -78,8 +78,9 @@ int str_echo (int sockfd)
 					}
 				}
 			}
-			printf("%d\n",nouveausockfd);
-			send (nouveausockfd, "abc", 3, MSG_OOB);
+			printf("j'envoie le jeton a %d\n",nouveausockfd);
+
+			send (nouveausockfd,"jeton",5,0);
 		}
 	}
 	else if (num == 0)
