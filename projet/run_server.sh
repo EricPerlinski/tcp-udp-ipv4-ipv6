@@ -1,3 +1,3 @@
 #!/bin/sh 
 
-./bin/serveur
+./bin/serveur 5555

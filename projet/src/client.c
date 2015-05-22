@@ -1,103 +1,37 @@
 #include     <stdio.h>
-#include     <sys/types.h>
-#include     <sys/socket.h>
-#include     <netinet/in.h>
-#include     <sys/un.h>
-#include     <arpa/inet.h>
-#include     <sys/uio.h>
-#include     <time.h>
-#include     <sys/timeb.h>
-#include     <errno.h>
-#include     <netdb.h>
+#include     <unistd.h>
 #include     <stdlib.h>
 #include     <strings.h>
+
+#include     <errno.h>
 #include 	 <fcntl.h>
 #include     <signal.h>
 
+#include     <sys/types.h>
+#include     <sys/socket.h>
+#include     <sys/un.h>
+#include     <sys/uio.h>
+#include     <sys/timeb.h>
+
+#include     <time.h>
+
+#include     <netinet/in.h>
+#include     <netdb.h>
+#include     <arpa/inet.h>
 
 
+#define SERV_PORT 5555
+#define PORT 6567
 
-#define SERV_PORT 55555
-#define PORT 8000
+#define MAXLINE 80
 #define localhost "127.0.0.1"
 #define GROUP "239.137.194.111"
 
-void participateRequest(int*,int,int*);
-void waitingMessage(int);
-void sendMessage(int);
-void initialisationSocketEmetteur();
-void initialisationSocketRecepteur();
-void initialisationSocketServer();
-struct sockaddr_in SockAddr;
-struct sockaddr_in emetteur_addr;
-struct sockaddr_in receveur_addr;
-int serverSocket, unixSocket,  n, retread;
-int socketEmetteur;
-int socketRecepteur;
-
-struct hostent *hp;  
-int ttl;
-struct ip_mreq imr;
-struct sockaddr_in  serv_addr;
-struct sockaddr_un  unixAddr;
-char *data;
-char sendbuf[1500];
-struct timeb tp;
-struct hostent *hp;  
-int ttl;	
-socklen_t len=sizeof(serv_addr);
-int jeton=0;
 int emetteurTab[FD_SETSIZE];
+int jeton=0;
 
-int main(int argc,char *argv[]) {
-
-    /**socket pour multicast cote emetteur**/
-	initialisationSocketEmetteur();
-    /**-------------FIN initialisation emetteur----------**/
-
-    /**socket pour multicast cote recepteur**/
-	initialisationSocketRecepteur();
-	/**-------------FIN initialisation recepteur----------**/
-
-	/**socket pour serveur**/
-	initialisationSocketServer();
-	/**-------------FIN initialisation serveur----------**/
-
-
-	/**instruction**/
-	printf("now you are connected to the server\n");
-	printf("====INSTRUCTION====\n");
-	printf("press 'p' to participate to the lecturer\n");
-	printf("press 'l' to let the token\n");
-	printf("press 'd' to deconnect to the server\n");
-	int participate=0;
-	
-	int count=0;
-	for(;;)
-	{
-
-
-		if (!participate)
-		{
-
-			participateRequest(&participate,serverSocket,&jeton);
-		}
-		else 
-		{
-			if (!jeton)//si tu n'as pas de jeton tu ne parles pas tu attends un message
-			{
-				waitingMessage(socketRecepteur);
-			}
-			else if (jeton)//si tu as un jeton tu parles
-			{
-				sendMessage(socketEmetteur);
-			}
-		}
-
-	}
-	close (serverSocket);
-
-
+usage(){
+    printf("usage : cliecho adresseIP_serveur(x.x.x.x)  numero_port_serveur\n");
 }
 
 
@@ -115,11 +49,11 @@ void participateRequest(int *participate,int serverSocket,int *jeton) {
 		if (num = recv(serverSocket, buffer, 10241,0)!= -1) {
 			if (strcmp("okn",buffer)==0){
 				printf("the server accepted your participation to the lecture\n and there is %s in the buffer\n",buffer);
-				//ajouter à la conférence
+				//ajouter Ã  la confÃ©rence
 			}else if (strcmp("okj",buffer)==0){
 				*jeton=1;
 				printf("the server accepted your participation to the lecture and you get the token\n,");
-				//ajouter à la conférence avec le jeton
+				//ajouter Ã  la confÃ©rence avec le jeton
 			}
 		}
 	} else 	{
@@ -127,7 +61,7 @@ void participateRequest(int *participate,int serverSocket,int *jeton) {
 	}
 }
 
-void waitingMessage(int socketRecepteur){
+void waitingMessage(int socketRecepteur, int serverSocket, struct sockaddr_in receveur_addr){
 	fd_set rset,pset;
 	int i=0;
 	for(i=0;i<FD_SETSIZE;i++){
@@ -167,7 +101,7 @@ void waitingMessage(int socketRecepteur){
 	}
 }
 
-void sendMessage(int socketEmet){
+void sendMessage(int socketEmet,int serverSocket,struct sockaddr_in emetteur_addr){
 	char mot[100]={};
 	printf(">>");
 	scanf("%s",mot);
@@ -187,43 +121,128 @@ void sendMessage(int socketEmet){
 
 }
 
-void initialisationSocketEmetteur(){
- /* 
-  * Remplir la structure  serv_addr avec l'adresse du serveur 
-  */
-  memset( (char *) &emetteur_addr,0, sizeof(emetteur_addr) );
-  emetteur_addr.sin_family = PF_INET;
-  emetteur_addr.sin_addr.s_addr = inet_addr(GROUP);
-  emetteur_addr.sin_port = htons(PORT);
-  
-  hp = (struct hostent *)gethostbyname (GROUP);
-  if (hp == NULL) {
+int main(int argc,char *argv[]) {
 
-  	exit(1);
-
-  }
-  //  bcopy( (char *) hp->h_addr,  (char *)& serv_addr.sin_addr, hp->h_length);
-  memcpy( &emetteur_addr.sin_addr ,  hp->h_addr,  hp->h_length);
-  //printf ("IP address: %s\n", inet_ntoa (serv_addr.sin_addr));
+	struct sockaddr_in emetteur_addr,receveur_addr;
+	int unixSocket, socketEmetteur,socketRecepteur;
+	struct hostent *hp;  
+	int ttl;
+	struct ip_mreq imr;
+	struct sockaddr_in  serv_addr;
+	struct sockaddr_un  unixAddr;
+	char *data;
+	char sendbuf[1500];
+	struct timeb tp;
+	socklen_t len=sizeof(serv_addr);
+		
 
 
- /*
- * Ouvrir socket UDP
- */
- if ((socketEmetteur = socket(PF_INET, SOCK_DGRAM, 0)) <0) {
- 	perror ("erreur socket");
- 	exit (1);
- }
 
- ttl=1;
- if (setsockopt(socketEmetteur, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl)) <0){
- 	perror ("setsockopt");
- 	exit (1);
- }
-}
 
-void initialisationSocketRecepteur(){
 
+
+
+
+
+
+    int serverSocket, servlen,n, retread,s;
+    
+    char fromServer[MAXLINE];
+    char fromUser[MAXLINE];
+
+    struct addrinfo *result,*rp;
+    struct addrinfo hints;
+
+    memset(&hints, 0, sizeof(struct addrinfo));
+    hints.ai_family = AF_INET6;    /* Allow IPv4 or IPv6 */
+    hints.ai_socktype = SOCK_STREAM; /* Datagram socket */
+    hints.ai_flags = 0;    /* For wildcard IP address */
+    hints.ai_protocol = 0;          /* Any protocol */
+    
+    if (argc != 3){
+        usage();
+        exit(1);
+    }
+
+    s = getaddrinfo(argv[1], argv[2], &hints, &result);
+    if( s != 0){
+        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(s));
+        exit(1);
+    }
+
+    /* Verifier le nombre de paramètre en entrée */
+    /* clientTCP <hostname> <numero_port>        */
+    for (rp = result; rp != NULL; rp = rp->ai_next) {
+        serverSocket = socket(rp->ai_family, rp->ai_socktype,
+            rp->ai_protocol);
+        if (serverSocket == -1)
+            continue;
+
+        if (connect(serverSocket, rp->ai_addr, rp->ai_addrlen) != -1)
+            break; /* Success */
+
+        close(serverSocket);
+    }
+
+    if (rp == NULL) { /* No address succeeded */
+        fprintf(stderr, "Could not connect\n");
+        exit(EXIT_FAILURE);
+    }
+
+    freeaddrinfo(result);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    /**socket pour multicast cote emetteur**/
+	/* 
+	* Remplir la structure  serv_addr avec l'adresse du serveur 
+	*/
+	memset( (char *) &emetteur_addr,0, sizeof(emetteur_addr) );
+	emetteur_addr.sin_family = PF_INET;
+	emetteur_addr.sin_addr.s_addr = inet_addr(GROUP);
+	emetteur_addr.sin_port = htons(PORT);
+
+	hp = (struct hostent *)gethostbyname (GROUP);
+	if (hp == NULL) {
+
+		exit(1);
+
+	}
+	//  bcopy( (char *) hp->h_addr,  (char *)& serv_addr.sin_addr, hp->h_length);
+	memcpy( &emetteur_addr.sin_addr ,  hp->h_addr,  hp->h_length);
+	//printf ("IP address: %s\n", inet_ntoa (serv_addr.sin_addr));
+
+
+	/*
+	* Ouvrir socket UDP
+	*/
+	if ((socketEmetteur = socket(PF_INET, SOCK_DGRAM, 0)) <0) {
+		perror ("erreur socket");
+		exit (1);
+	}
+
+	ttl=1;
+	if (setsockopt(socketEmetteur, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl)) <0){
+		perror ("setsockopt");
+		exit (1);
+	}
+    /**-------------FIN initialisation emetteur----------**/
+
+    /**socket pour multicast cote recepteur**/
 	memset( (char *) &receveur_addr,0, sizeof(receveur_addr) );
 	receveur_addr.sin_family = PF_INET;
 	receveur_addr.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -243,7 +262,7 @@ void initialisationSocketRecepteur(){
 		exit (1);
 	}
 
-    // en cas de réutilisation d'un port
+    // en cas de reutilisation d'un port
 	unsigned int on=1;
 	if (setsockopt(socketRecepteur,SOL_SOCKET,SO_REUSEADDR, &on, sizeof(on)) <0){
 		perror ("setsockopt2");
@@ -254,22 +273,41 @@ void initialisationSocketRecepteur(){
 		perror ("setsockopt3");
 		exit (1);
 	}
-}
+	/**-------------FIN initialisation recepteur----------**/
 
-void initialisationSocketServer(){
-		//socket pour discuter avec le serveur
-	if ((serverSocket=socket(AF_INET,SOCK_STREAM,0))<0){
-		perror("erreur socket");
-		exit(1);
-	}
 
-	bzero ((char *)&SockAddr, sizeof(SockAddr));
-	SockAddr.sin_family =AF_INET;
-	SockAddr.sin_port =htons(SERV_PORT);
-	SockAddr.sin_addr.s_addr = inet_addr(localhost);
-	/**connection au serveur**/
-	if (connect(serverSocket,(struct sockaddr *)&SockAddr,sizeof(SockAddr))<0){
-		perror("error connection server");
-		exit (1);
+	/**instruction**/
+	printf("now you are connected to the server\n");
+	printf("====INSTRUCTION====\n");
+	printf("press 'p' to participate to the lecturer\n");
+	printf("press 'l' to let the token\n");
+	printf("press 'd' to deconnect to the server\n");
+	int participate=0;
+	
+	int count=0;
+	for(;;)
+	{
+
+
+		if (!participate)
+		{
+
+			participateRequest(&participate,serverSocket,&jeton);
+		}
+		else 
+		{
+			if (!jeton)//si tu n'as pas de jeton tu ne parles pas tu attends un message
+			{
+				waitingMessage(socketRecepteur,serverSocket, receveur_addr);
+			}
+			else if (jeton)//si tu as un jeton tu parles
+			{
+				sendMessage(socketEmetteur,serverSocket,emetteur_addr);
+			}
+		}
+
 	}
+	close (serverSocket);
+
+
 }

@@ -1,3 +1,3 @@
 #!/bin/sh 
 
-./bin/client
+./bin/client localhost 5555
