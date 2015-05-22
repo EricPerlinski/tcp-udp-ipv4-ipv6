@@ -1,3 +1,3 @@
 #!/bin/sh 
 
-./bin/serverTCPModifStruct 8001
+./bin/serverTCPModifStruct 8002

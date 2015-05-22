@@ -23,10 +23,11 @@
 int premier=0;
 int leader=0;
 
-int str_echo (int sockfd) {
+int str_echo (int sockfd, int nextsockcli) {
 	int num, nsnd;
 	char buffer[BUFSIZE];
 	memset( (char*)buffer, 0, sizeof(buffer) );
+
 	if ( (num= read ( sockfd, buffer, sizeof(buffer)-1) ) < 0 )  {
 		perror ("servmulti : : readn error on socket");
 		exit (1);
@@ -35,6 +36,7 @@ int str_echo (int sockfd) {
 	 
 		buffer[num] = '\0';
 		if (strcmp(buffer,"p")==0){
+			
 			printf("you press %s so the server is checking if you can participate to the lecture\n",buffer);
 			printf("The client %d ask to participate to the lecture\n",sockfd);
 			if (premier==0){
@@ -46,51 +48,26 @@ int str_echo (int sockfd) {
 				write(sockfd,"okn",3);
 			}
 
-		}/*
-		else if(strcmp(buffer,"l")==0){
+		}else if(strcmp(buffer,"l")==0){
 			printf("the client %d leave the token\n",sockfd);
 			//passer le jeton en cherchant le prochain descripteur
-			int placeSockfd =0;
-			int j=0;
-			for (j=0;j<FD_SETSIZE;j++){
-				if (tab_clients[j]==sockfd){
-					placeSockfd=j;
-					break;
-				}
+			if(sockfd == nextsockcli){
+				leader = sockfd;
+				send (sockfd,"jeton",5,0);	
+				printf("j'envoie le jeton a %d\n",sockfd);
+			}else{
+				leader = nextsockcli;
+				send (nextsockcli,"jeton",5,0);
+				printf("j'envoie le jeton a %d\n",nextsockcli);
 			}
-			int h=0;
-			int nouveausockfd=0;
-			int presentApres=0;
-			for (h=placeSockfd+1;h<FD_SETSIZE;h++){
-				if(tab_clients[h]!=-1){
-					presentApres=1;
-					nouveausockfd=tab_clients[h];
-					break;
-				}
-			}if (presentApres==0){
-				h=0;
-				for (h=0;h<FD_SETSIZE;h++){
-					if(tab_clients[h]!=-1){
-						nouveausockfd=tab_clients[h];
-						break;
-					}
-				}
-			}
-			printf("j'envoie le jeton a %d\n",nouveausockfd);
-
-			send (nouveausockfd,"jeton",5,0);
 		}
-	*/
-	}
-	/*
-	else if (num == 0){
+	}else if (num == 0){
 		printf("Connection closed\n");
 		return 0;
 	}else{
 		perror("recv");
 		exit(1);
 	}
-	*/
 	return (nsnd);
 }
 
@@ -179,7 +156,7 @@ int main (int argc,char *argv[]){
 	FD_ZERO(&rset);
 	FD_SET(serverSocket,&rset);
 	
-	
+	int k;
 
 	for (;;){
 		pset = rset;
@@ -193,6 +170,7 @@ int main (int argc,char *argv[]){
             i = 0;
             
             while((i<FD_SETSIZE) && (tab_clients[i] >= 0)) i++;
+            k = i;
             
             if(i==FD_SETSIZE) exit(1);
             printf("--i= %d--\n",i+4);
@@ -208,11 +186,26 @@ int main (int argc,char *argv[]){
         while((nbr > 0) && (i < FD_SETSIZE )){
             if(((sockcli = tab_clients[i]) >= 0) && (FD_ISSET(sockcli,&pset))) {
                 printf("--sockcli= %d--\n",sockcli);
-                if(str_echo(sockcli) == 0){
-                    close(sockcli);
+                int nextsockcli;
+
+                printf("k:%d;i: %d;Nbr : %d; FD_SETSIZE: %d\n",k,i,nbr,FD_SETSIZE);
+                if(k == 0){
+                	nextsockcli = sockcli;
+                	printf("J'entre dans le if 1\n");
+                }else if(i == k){
+                	printf("J'entre dans le if 2\n");
+                	nextsockcli = tab_clients[0];
+                }else {
+                	printf("J'entre dans le if 3\n");
+                	nextsockcli = tab_clients[i+1];
+                }
+
+                if(str_echo(sockcli,nextsockcli) == 0){
+
+                    /*close(sockcli);
                     tab_clients[i] = -1;
                     FD_CLR(sockcli,&rset);
-                    
+                    */
                 }
                 nbr--;
                 premier=1;

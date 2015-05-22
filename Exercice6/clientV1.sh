@@ -1,3 +1,3 @@
 #!/bin/sh 
 
-./bin/clientTCPModifStruct localhost 8001
+./bin/clientTCPModifStruct localhost 8002
