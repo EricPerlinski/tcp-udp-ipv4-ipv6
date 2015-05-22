@@ -19,7 +19,7 @@
 #define BUFSIZE 1500
 #define MAXLINE 80
 
-int tab_clients[FD_SETSIZE];
+
 int premier=0;
 int leader=0;
 
@@ -31,7 +31,7 @@ int str_echo (int sockfd) {
 		perror ("servmulti : : readn error on socket");
 		exit (1);
 	}if (num !=-1){
-	 //on a reÃ§u des donnÃ©es de la part du client
+	 //on a recu des donnees de la part du client
 	 
 		buffer[num] = '\0';
 		if (strcmp(buffer,"p")==0){
@@ -46,7 +46,7 @@ int str_echo (int sockfd) {
 				write(sockfd,"okn",3);
 			}
 
-		}
+		}/*
 		else if(strcmp(buffer,"l")==0){
 			printf("the client %d leave the token\n",sockfd);
 			//passer le jeton en cherchant le prochain descripteur
@@ -80,7 +80,9 @@ int str_echo (int sockfd) {
 
 			send (nouveausockfd,"jeton",5,0);
 		}
+	*/
 	}
+	/*
 	else if (num == 0){
 		printf("Connection closed\n");
 		return 0;
@@ -88,6 +90,7 @@ int str_echo (int sockfd) {
 		perror("recv");
 		exit(1);
 	}
+	*/
 	return (nsnd);
 }
 
@@ -99,7 +102,7 @@ usage(){
 
 int main (int argc,char *argv[]){
 
-	int s,serverSocket, clientSocket; /* declaration socket passive et socket active */
+	int s,serverSocket, clientSocket,i,nbr; /* declaration socket passive et socket active */
 
     struct addrinfo hints;
     struct addrinfo *result;
@@ -137,10 +140,8 @@ int main (int argc,char *argv[]){
         exit (2);
     }
 
-	int childpid, servlen,fin;
-	socklen_t clilen;
-	fd_set rset,pset;
-	int maxfd;
+	
+	
 
 	// en cas de reutilisation d'un port
 	unsigned int on=1;
@@ -167,54 +168,57 @@ int main (int argc,char *argv[]){
     freeaddrinfo(result);  
 
 
-	int i;
-	for(i=0;i<FD_SETSIZE;i++) tab_clients[i]=-1;
-	FD_ZERO(&rset);
-	FD_ZERO(&pset);
-	FD_SET(serverSocket,&rset);
-	int nbr;
+    int childpid, servlen,fin,sockcli;
+	socklen_t clilen;
+	fd_set rset,pset;
+	int maxfd;
+	int tab_clients[FD_SETSIZE];
 	maxfd=serverSocket+1;
+	for(i=0;i<FD_SETSIZE;i++) tab_clients[i]=-1;
+	FD_ZERO(&pset);
+	FD_ZERO(&rset);
+	FD_SET(serverSocket,&rset);
+	
+	
 
 	for (;;){
-		pset=rset;
-		nbr=select(maxfd, &pset, NULL , NULL , NULL);
-		if (FD_ISSET(serverSocket,&pset)) {
-			clilen = sizeof(cli_addr);
-			clientSocket = accept(serverSocket,(struct sockaddr *) &cli_addr,  &clilen);
-			if (clientSocket < 0) {
-				perror("servmulti : erreur accept\n");
-				exit (1);
-			}
-			i=0;
-			while (i<FD_SETSIZE && tab_clients[i]>=0){
-				i++;
-			}
-			if (i== FD_SETSIZE){
-				exit(1);
-			}
-			tab_clients[i]=clientSocket;
+		pset = rset;
+        nbr = select(maxfd,&pset,NULL,NULL,NULL);
 
-			FD_SET(clientSocket,&rset);
-			if (clientSocket >= maxfd){
-				maxfd=clientSocket+1;
-			}
-			nbr--;
-		}
+        if(FD_ISSET(serverSocket,&pset)){
+            
+            clilen = sizeof(cli_addr);
+            clientSocket = accept(serverSocket, (struct sockaddr *) &cli_addr,  &clilen);
+            
+            i = 0;
+            
+            while((i<FD_SETSIZE) && (tab_clients[i] >= 0)) i++;
+            
+            if(i==FD_SETSIZE) exit(1);
+            printf("--i= %d--\n",i+4);
+            tab_clients[i] = clientSocket;
+            FD_SET(clientSocket,&rset);
 
-		i=0;
-		while (i<FD_SETSIZE && nbr>0){
-			if (tab_clients[i]>=0 && FD_ISSET(tab_clients[i],&pset)){
+            if (clientSocket >= maxfd) maxfd= clientSocket+1;
+            nbr--;
+        }
 
-				if (str_echo(tab_clients[i]) == 0){
-					close(tab_clients[i]);
-					tab_clients[i]=-1;
-					FD_CLR(tab_clients[i],&rset);
-				}
-				nbr--;
-				premier=1;
-			}
-			i++;
-		}
+        i=0;
+
+        while((nbr > 0) && (i < FD_SETSIZE )){
+            if(((sockcli = tab_clients[i]) >= 0) && (FD_ISSET(sockcli,&pset))) {
+                printf("--sockcli= %d--\n",sockcli);
+                if(str_echo(sockcli) == 0){
+                    close(sockcli);
+                    tab_clients[i] = -1;
+                    FD_CLR(sockcli,&rset);
+                    
+                }
+                nbr--;
+                premier=1;
+            }
+            i++;
+        }
 	} 
 }
 

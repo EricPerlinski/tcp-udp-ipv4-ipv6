@@ -71,31 +71,30 @@ void waitingMessage(int socketRecepteur, int serverSocket, struct sockaddr_in re
 	FD_ZERO(&pset);
 	FD_SET(serverSocket,&rset);
 	FD_SET(socketRecepteur,&rset);
-	int nbr=0;
+	int nbr;
 	int goOn=1;
 	int maxfd=FD_SETSIZE;
 	while (goOn){
 		pset=rset;
 		nbr=select(maxfd, &pset, NULL , NULL , NULL);
-		if(nbr>0){
-			if(FD_ISSET(socketRecepteur,&pset)){
+		if(FD_ISSET(socketRecepteur,&pset)){
 				int cnt,len_r=sizeof(receveur_addr);
 				char buf[100]="\0";
 				cnt=recvfrom(socketRecepteur,buf,sizeof(buf),0,(struct sockaddr *)&receveur_addr,&len_r);
 				printf("%s\n",buf);
-			}
-			else if(FD_ISSET(serverSocket,&pset)){
-				int num;
-				char buffer[200]="\0";
-				if (num = recv(serverSocket, buffer,sizeof(buffer),0)!= -1)
+		}
+		else if(FD_ISSET(serverSocket,&pset)){
+			int num;
+			char buffer[200]="\0";
+			if (num = recv(serverSocket, buffer,sizeof(buffer),0)!= -1)
+			{
+				if (strcmp(buffer,"jeton")==0)
 				{
-					if (strcmp(buffer,"jeton")==0)
-					{
-						printf("%s\n",buffer);
-						goOn=0;
-						jeton=1;
-					}
+					printf("%s\n",buffer);
+					goOn=0;
+					jeton=1;
 				}
+				
 			}
 		}
 	}
@@ -154,7 +153,7 @@ int main(int argc,char *argv[]) {
     struct addrinfo hints;
 
     memset(&hints, 0, sizeof(struct addrinfo));
-    hints.ai_family = AF_INET6;    /* Allow IPv4 or IPv6 */
+    hints.ai_family = PF_INET;    /* Allow IPv4 or IPv6 */
     hints.ai_socktype = SOCK_STREAM; /* Datagram socket */
     hints.ai_flags = 0;    /* For wildcard IP address */
     hints.ai_protocol = 0;          /* Any protocol */
@@ -189,7 +188,7 @@ int main(int argc,char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    
+
 
     freeaddrinfo(result);
 
