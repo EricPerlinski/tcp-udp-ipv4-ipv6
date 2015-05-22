@@ -13,6 +13,9 @@
 #include     <strings.h>
 #include 	 <fcntl.h>
 #include     <signal.h>
+
+
+
 #define SERV_PORT 2334
 #define PORT 8000
 #define localhost "127.0.0.1"
@@ -44,9 +47,9 @@ int ttl;
 socklen_t len=sizeof(serv_addr);
 int jeton=0;
 int emetteurTab[FD_SETSIZE];
-int main(int argc,char *argv[])
-{
 
+
+int main(int argc,char *argv[]) {
 
     /**socket pour multicast cote emetteur**/
 	initialisationSocketEmetteur();
@@ -98,46 +101,36 @@ int main(int argc,char *argv[])
 }
 
 
-void participateRequest(int *participate,int serverSocket,int *jeton)
-{
+void participateRequest(int *participate,int serverSocket,int *jeton) {
 	int num;
 	char buffer[10241]={};
 	char mot[100]={};
 	char s[100]={};
 	printf(">>");
 	scanf("%s",mot);
-	if (strcmp(mot,"p")==0)
-	{
+	if (strcmp(mot,"p")==0) {
 		printf("wait a minute the server is checking if you can participate to the talk...\n");
 		*participate=1;
 		send(serverSocket, "p",1, 0);
-		if (num = recv(serverSocket, buffer, 10241,0)!= -1)
-		{
-			if (strcmp("okn",buffer)==0)
-			{
+		if (num = recv(serverSocket, buffer, 10241,0)!= -1) {
+			if (strcmp("okn",buffer)==0){
 				printf("the server accepted your participation to the lecture\n and there is %s in the buffer\n",buffer);
 				//ajouter à la conférence
-			}
-			else if (strcmp("okj",buffer)==0)
-			{
+			}else if (strcmp("okj",buffer)==0){
 				*jeton=1;
 				printf("the server accepted your participation to the lecture and you get the token\n,");
 				//ajouter à la conférence avec le jeton
 			}
 		}
-	}
-	else
-	{
+	} else 	{
 		printf("Sorry but you don't participate to the the lecture\n");
 	}
 }
 
-void waitingMessage(int socketRecepteur)
-{
+void waitingMessage(int socketRecepteur){
 	fd_set rset,pset;
 	int i=0;
-	for(i=0;i<FD_SETSIZE;i++)
-	{
+	for(i=0;i<FD_SETSIZE;i++){
 		emetteurTab[i]=-1;
 	}
 	FD_ZERO(&rset);
@@ -147,21 +140,17 @@ void waitingMessage(int socketRecepteur)
 	int nbr=0;
 	int goOn=1;
 	int maxfd=FD_SETSIZE;
-	while (goOn)
-	{
+	while (goOn){
 		pset=rset;
 		nbr=select(maxfd, &pset, NULL , NULL , NULL);
-		if(nbr>0)
-		{
-			if(FD_ISSET(socketRecepteur,&pset))
-			{
+		if(nbr>0){
+			if(FD_ISSET(socketRecepteur,&pset)){
 				int cnt,len_r=sizeof(receveur_addr);
 				char buf[100]="\0";
 				cnt=recvfrom(socketRecepteur,buf,sizeof(buf),0,(struct sockaddr *)&receveur_addr,&len_r);
 				printf("%s\n",buf);
 			}
-			else if(FD_ISSET(serverSocket,&pset))
-			{
+			else if(FD_ISSET(serverSocket,&pset)){
 				int num;
 				char buffer[200]="\0";
 				if (num = recv(serverSocket, buffer,sizeof(buffer),0)!= -1)
@@ -178,26 +167,19 @@ void waitingMessage(int socketRecepteur)
 	}
 }
 
-void sendMessage(int socketEmet)
-{
+void sendMessage(int socketEmet){
 	char mot[100]={};
 	printf(">>");
 	scanf("%s",mot);
-	if ((strcmp(mot,"l") == 0))
-	{
+	if ((strcmp(mot,"l") == 0)){
 		send(serverSocket, "l",1, 0);
 		sendto(socketEmet,"fin",3,0,(struct sockaddr *)&emetteur_addr, sizeof(emetteur_addr));
 		jeton=0;
-	}
-	else if ((strcmp(mot,"v") == 0))
-	{
+	}else if ((strcmp(mot,"v") == 0)){
 		send(serverSocket, "v",1, 0);
-	}
-	else
-	{
+	}else{
 		int n= sendto(socketEmet, mot, strlen(mot)+1,0,(struct sockaddr *)&emetteur_addr, sizeof(emetteur_addr));
-		if (n<0)
-		{
+		if (n<0){
 			perror ("erreur sendto");
 			exit (1);
 		}
@@ -205,8 +187,7 @@ void sendMessage(int socketEmet)
 
 }
 
-void initialisationSocketEmetteur()
-{
+void initialisationSocketEmetteur(){
  /* 
   * Remplir la structure  serv_addr avec l'adresse du serveur 
   */
@@ -219,6 +200,7 @@ void initialisationSocketEmetteur()
   if (hp == NULL) {
 
   	exit(1);
+
   }
   //  bcopy( (char *) hp->h_addr,  (char *)& serv_addr.sin_addr, hp->h_length);
   memcpy( &emetteur_addr.sin_addr ,  hp->h_addr,  hp->h_length);
@@ -234,15 +216,14 @@ void initialisationSocketEmetteur()
  }
 
  ttl=1;
- if (setsockopt(socketEmetteur, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl)) <0)
- {
+ if (setsockopt(socketEmetteur, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl)) <0){
  	perror ("setsockopt");
  	exit (1);
  }
 }
 
-void initialisationSocketRecepteur()
-{
+void initialisationSocketRecepteur(){
+
 	memset( (char *) &receveur_addr,0, sizeof(receveur_addr) );
 	receveur_addr.sin_family = PF_INET;
 	receveur_addr.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -257,32 +238,27 @@ void initialisationSocketRecepteur()
 	imr.imr_multiaddr.s_addr = inet_addr(GROUP);
 	imr.imr_interface.s_addr =INADDR_ANY;
 
-	if (setsockopt(socketRecepteur,IPPROTO_IP,IP_ADD_MEMBERSHIP, &imr, sizeof(imr)) <0)
-	{
+	if (setsockopt(socketRecepteur,IPPROTO_IP,IP_ADD_MEMBERSHIP, &imr, sizeof(imr)) <0){
 		perror ("setsockopt1");
 		exit (1);
 	}
 
     // en cas de réutilisation d'un port
 	unsigned int on=1;
-	if (setsockopt(socketRecepteur,SOL_SOCKET,SO_REUSEADDR, &on, sizeof(on)) <0)
-	{
+	if (setsockopt(socketRecepteur,SOL_SOCKET,SO_REUSEADDR, &on, sizeof(on)) <0){
 		perror ("setsockopt2");
 		exit (1);
 	}
 
-	if (bind(socketRecepteur,(struct sockaddr *) &receveur_addr,sizeof(receveur_addr))<0)
-	{
+	if (bind(socketRecepteur,(struct sockaddr *) &receveur_addr,sizeof(receveur_addr))<0){
 		perror ("setsockopt3");
 		exit (1);
 	}
 }
 
-void initialisationSocketServer()
-{
+void initialisationSocketServer(){
 		//socket pour discuter avec le serveur
-	if ((serverSocket=socket(AF_INET,SOCK_STREAM,0))<0)
-	{
+	if ((serverSocket=socket(AF_INET,SOCK_STREAM,0))<0){
 		perror("erreur socket");
 		exit(1);
 	}
@@ -292,8 +268,7 @@ void initialisationSocketServer()
 	SockAddr.sin_port =htons(SERV_PORT);
 	SockAddr.sin_addr.s_addr = inet_addr(localhost);
 	/**connection au serveur**/
-	if (connect(serverSocket,(struct sockaddr *)&SockAddr,sizeof(SockAddr))<0)
-	{
+	if (connect(serverSocket,(struct sockaddr *)&SockAddr,sizeof(SockAddr))<0){
 		perror("error connection server");
 		exit (1);
 	}

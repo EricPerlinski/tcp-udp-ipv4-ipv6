@@ -6,50 +6,45 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#define SERV_PORT 2334
+#define SERV_PORT 55555
 #define MAX_CLIENT 20
 #define BUFSIZE 1500
 
 int tab_clients[FD_SETSIZE];
 int premier=0;
 int leader=0;
-int str_echo (int sockfd)
-{
+
+int str_echo (int sockfd) {
 	int num, nsnd;
 	char buffer[BUFSIZE];
 	memset( (char*)buffer, 0, sizeof(buffer) );
 	if ( (num= read ( sockfd, buffer, sizeof(buffer)-1) ) < 0 )  {
 		perror ("servmulti : : readn error on socket");
 		exit (1);
-	}
-	if (num !=-1) //on a reçu des données de la part du client
-	{ 
+	}if (num !=-1){
+	 //on a reçu des données de la part du client
+	 
 		buffer[num] = '\0';
-		if (strcmp(buffer,"p")==0)
-		{
+		if (strcmp(buffer,"p")==0){
 			printf("you press %s so the server is checking if you can participate to the lecture\n",buffer);
 			printf("The client %d ask to participate to the lecture\n",sockfd);
-			if (premier==0)//c'est le premier participant on lui donne le jeton par défaut
-			{
+			if (premier==0){
+			//c'est le premier participant on lui donne le jeton par défaut
 				write(sockfd,"okj",3);
 				leader=sockfd;
-			}
-			else //c'est un participant en plus on ne lui donne pas le jeton il devra le demander
-			{
+			}else{
+			//c'est un participant en plus on ne lui donne pas le jeton il devra le demander
 				write(sockfd,"okn",3);
 			}
 
 		}
-		else if(strcmp(buffer,"l")==0)
-		{
+		else if(strcmp(buffer,"l")==0){
 			printf("the client %d leave the token\n",sockfd);
 			//passer le jeton en cherchant le prochain descripteur
 			int placeSockfd =0;
 			int j=0;
-			for (j=0;j<FD_SETSIZE;j++)
-			{
-				if (tab_clients[j]==sockfd)
-				{
+			for (j=0;j<FD_SETSIZE;j++){
+				if (tab_clients[j]==sockfd){
 					placeSockfd=j;
 					break;
 				}
@@ -57,22 +52,16 @@ int str_echo (int sockfd)
 			int h=0;
 			int nouveausockfd=0;
 			int presentApres=0;
-			for (h=placeSockfd+1;h<FD_SETSIZE;h++)
-			{
-				if(tab_clients[h]!=-1)
-				{
+			for (h=placeSockfd+1;h<FD_SETSIZE;h++){
+				if(tab_clients[h]!=-1){
 					presentApres=1;
 					nouveausockfd=tab_clients[h];
 					break;
 				}
-			}
-			if (presentApres==0)
-			{
+			}if (presentApres==0){
 				h=0;
-				for (h=0;h<FD_SETSIZE;h++)
-				{
-					if(tab_clients[h]!=-1)
-					{
+				for (h=0;h<FD_SETSIZE;h++){
+					if(tab_clients[h]!=-1){
 						nouveausockfd=tab_clients[h];
 						break;
 					}
@@ -83,13 +72,10 @@ int str_echo (int sockfd)
 			send (nouveausockfd,"jeton",5,0);
 		}
 	}
-	else if (num == 0)
-	{
+	else if (num == 0){
 		printf("Connection closed\n");
 		return 0;
-	}
-	else 
-	{
+	}else{
 		perror("recv");
 		exit(1);
 	}
@@ -102,9 +88,8 @@ usage(){
 }
 
 
-int main (int argc,char *argv[])
+int main (int argc,char *argv[]){
 
-{
 	int sockfd, n, newsockfd, childpid, servlen,fin;
 	struct sockaddr_in  serv_addr, cli_addr;
 	socklen_t clilen;
@@ -134,8 +119,7 @@ int main (int argc,char *argv[])
 
 
 	int i=0;
-	for(i=0;i<FD_SETSIZE;i++)
-	{
+	for(i=0;i<FD_SETSIZE;i++){
 		tab_clients[i]=-1;
 	}
 	FD_ZERO(&rset);
@@ -146,11 +130,9 @@ int main (int argc,char *argv[])
 	for (;;){
 		pset=rset;
 		nbr=select(maxfd, &pset, NULL , NULL , NULL);
-		if(nbr>0)
-		{
+		if(nbr>0){
 			
-			if (FD_ISSET(sockfd,&pset)) 
-			{
+			if (FD_ISSET(sockfd,&pset)) {
 				clilen = sizeof(cli_addr);
 				newsockfd = accept(sockfd,(struct sockaddr *) &cli_addr,  &clilen);
 				if (newsockfd < 0) {
@@ -158,32 +140,26 @@ int main (int argc,char *argv[])
 					exit (1);
 				}
 				i=0;
-				while (i<FD_SETSIZE && tab_clients[i]>=0)
-				{
+				while (i<FD_SETSIZE && tab_clients[i]>=0){
 					i++;
 				}
-				if (i== FD_SETSIZE)
-				{
+				if (i== FD_SETSIZE){
 					exit(1);
 				}
 				tab_clients[i]=newsockfd;
 
 				FD_SET(newsockfd,&rset);
-				if (newsockfd >= maxfd)
-				{
+				if (newsockfd >= maxfd){
 					maxfd=newsockfd+1;
 				}
 				nbr--;
 			}
 
 			i=0;
-			while (i<FD_SETSIZE && nbr>0)
-			{
-				if (tab_clients[i]>=0 && FD_ISSET(tab_clients[i],&pset))
-				{
+			while (i<FD_SETSIZE && nbr>0){
+				if (tab_clients[i]>=0 && FD_ISSET(tab_clients[i],&pset)){
 
-					if (str_echo(tab_clients[i]) == 0)
-					{
+					if (str_echo(tab_clients[i]) == 0){
 						close(tab_clients[i]);
 						tab_clients[i]=-1;
 						FD_CLR(tab_clients[i],&rset);
