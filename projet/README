@@ -1,0 +1,33 @@
+In order to launch the project, you have to 
+launch 1 or more instance of clientsand one 
+instance of server. That's why you need 
+multiple consoles. 
+
+First, you need to compile the program and 
+create all the differents directories.
+
+To do so, type "make directories" in your unix 
+console. 
+
+Then, type "make" to compile. It'll generate
+automatically the executable files in the 
+appropriate directory named "bin".
+
+You can run the server by launching the shell
+script "./run_server.sh"
+
+You can also run the client by launching the
+shell script "./run_client.sh"
+
+
+If you want to edit ports for the server,
+you can just edit the shell script. There's no 
+need to recompile. That's the same for the client, 
+just edit the shell script with appropriate 
+ip address and port.
+
+
+
+
+
+ 

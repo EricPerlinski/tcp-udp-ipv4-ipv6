@@ -60,7 +60,10 @@ int str_echo (int sockfd, int nextsockcli) {
 				send (nextsockcli,"jeton",5,0);
 				printf("j'envoie le jeton a %d\n",nextsockcli);
 			}
+		}if(strcmp(buffer,"d")==0){
+			printf("the client %d wants to disconnect\n",sockfd);
 		}
+
 	}else if (num == 0){
 		printf("Connection closed\n");
 		return 0;
@@ -187,16 +190,11 @@ int main (int argc,char *argv[]){
             if(((sockcli = tab_clients[i]) >= 0) && (FD_ISSET(sockcli,&pset))) {
                 printf("--sockcli= %d--\n",sockcli);
                 int nextsockcli;
-
-                printf("k:%d;i: %d;Nbr : %d; FD_SETSIZE: %d\n",k,i,nbr,FD_SETSIZE);
                 if(k == 0){
                 	nextsockcli = sockcli;
-                	printf("J'entre dans le if 1\n");
                 }else if(i == k){
-                	printf("J'entre dans le if 2\n");
                 	nextsockcli = tab_clients[0];
                 }else {
-                	printf("J'entre dans le if 3\n");
                 	nextsockcli = tab_clients[i+1];
                 }
 

@@ -135,15 +135,6 @@ int main(int argc,char *argv[]) {
 	socklen_t len=sizeof(serv_addr);
 		
 
-
-
-
-
-
-
-
-
-
     int serverSocket, servlen,n, retread,s;
     
     char fromServer[MAXLINE];
