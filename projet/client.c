@@ -13,7 +13,7 @@
 #include     <strings.h>
 #include 	 <fcntl.h>
 #include     <signal.h>
-#define SERV_PORT 2334
+#define SERV_PORT 2335
 #define PORT 8000
 #define localhost "127.0.0.1"
 #define GROUP "239.137.194.111"
@@ -44,6 +44,9 @@ int ttl;
 socklen_t len=sizeof(serv_addr);
 int jeton=0;
 int emetteurTab[FD_SETSIZE];
+
+
+
 int main(int argc,char *argv[])
 {
 
