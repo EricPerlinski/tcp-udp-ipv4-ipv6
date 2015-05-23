@@ -1,0 +1,8 @@
+Explications du fonctionnement du serveur
+
+Nous avons un signal SIGURG qui sera catché par le handler 
+lorsque l'on reçoit un message urgent avec l'OOB.
+
+De ce fait, on catch ce signal et la fonction du handler 
+est executé. 
+

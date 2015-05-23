@@ -8,13 +8,11 @@ Exercice2 :
 
 Exercice3 : 
 	
-	Need Wireshark traces
+	Done
 
 Exercice4 : 
 	
-	_ analyze & explain the behaviour of the server.
-	_ Explain what you can see in the TCP part with wireshark. 
-		(+ infos related to sig_urg and oob data).  
+	Done
 
 Exercice5 :
 
@@ -22,12 +20,9 @@ Exercice5 :
 
 Exercice6 :
 
-	TODO:
-		in both version, add the IP address of both the server and client
+	Done
 
-Exercice7 :
+Project :
 
-	-disconnect
-	-ipv6
-	-point to point transmission from the server
-	-(optional) the client can create another group
+	Done
+
