@@ -89,7 +89,6 @@ int str_echo (int sockfd, int nextsockcli) {
 		printf("the client %d wants to disconnect\n",sockfd);
 		printf("Connection closed\n");
 		send (nextsockcli,"jeton",5,0);
-		send (sockfd,"okdeco",6,0);
 		printf("j'envoie le jeton a %d\n",nextsockcli);
 		return 0;
 	}else{

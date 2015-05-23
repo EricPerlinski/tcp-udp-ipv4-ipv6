@@ -20,17 +20,29 @@
 #include     <arpa/inet.h>
 
 
-#define SERV_PORT 5555
+
 #define PORT 6567
 
 #define MAXLINE 80
-#define localhost "127.0.0.1"
+
 #define GROUP "239.137.194.111"
 
 int emetteurTab[FD_SETSIZE];
 int jeton=0;
 int participate=0;
 int disconnected = 0;
+int serverSocketInt;
+
+void handlerInt(int sig){
+	
+	printf("Deconnexion\n");
+	send(serverSocketInt,"d",1,0);
+	exit(EXIT_SUCCESS);
+
+}
+
+
+
 
 usage(){
     printf("usage : cliecho adresseIP_serveur(x.x.x.x)  numero_port_serveur\n");
@@ -154,6 +166,13 @@ void sendMessage(int socketEmet,int serverSocket,struct sockaddr_in emetteur_add
 
 int main(int argc,char *argv[]) {
 
+
+	struct sigaction nvt,old;	
+	memset(&nvt,0,sizeof(nvt));
+	nvt.sa_handler = &handlerInt;
+	sigaction(SIGINT,&nvt,&old);
+	signal(SIGINT,&handlerInt);
+
 	struct sockaddr_in emetteur_addr,receveur_addr;
 	int unixSocket, socketEmetteur,socketRecepteur;
 	struct hostent *hp;  
@@ -211,7 +230,7 @@ int main(int argc,char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-
+    serverSocketInt = serverSocket;
 
     freeaddrinfo(result);
 
