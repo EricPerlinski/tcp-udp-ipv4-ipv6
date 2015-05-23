@@ -29,13 +29,29 @@
 
 int emetteurTab[FD_SETSIZE];
 int jeton=0;
+int participate=0;
+int disconnected = 0;
 
 usage(){
     printf("usage : cliecho adresseIP_serveur(x.x.x.x)  numero_port_serveur\n");
 }
 
+void quitApp(int serverSocket,int socketRecepteur,int socketEmetteur){
 
-void participateRequest(int *participate,int serverSocket,int *jeton) {
+	printf("\n\nType q to quit\n");
+	
+	char mot[100]={};
+	while(strcmp(mot,"q") != 0){
+		printf(">>");
+		scanf("%s\n",mot);
+	}
+	
+	exit(EXIT_SUCCESS);
+
+
+}
+
+void participateRequest(int serverSocket, int socketRecepteur, int *jeton, struct ip_mreq imr) {
 	int num;
 	char buffer[10241]={};
 	char mot[100]={};
@@ -43,9 +59,12 @@ void participateRequest(int *participate,int serverSocket,int *jeton) {
 	printf(">>");
 	scanf("%s",mot);
 	if (strcmp(mot,"p")==0) {
+
 		printf("wait a minute the server is checking if you can participate to the talk...\n");
-		*participate=1;
+		participate=1;
 		send(serverSocket, "p",1, 0);
+		
+		
 		if (num = recv(serverSocket, buffer, 10241,0)!= -1) {
 			if (strcmp("okn",buffer)==0){
 				printf("the server accepted your participation to the lecture\n and there is %s in the buffer\n",buffer);
@@ -56,12 +75,13 @@ void participateRequest(int *participate,int serverSocket,int *jeton) {
 				//ajouter Ã  la confÃ©rence avec le jeton
 			}
 		}
+
 	} else 	{
 		printf("Sorry but you don't participate to the the lecture\n");
 	}
 }
 
-void waitingMessage(int socketRecepteur, int serverSocket, struct sockaddr_in receveur_addr){
+void waitingMessage(int socketRecepteur, int serverSocket, struct sockaddr_in receveur_addr,struct ip_mreq imr){
 	fd_set rset,pset;
 	int i=0;
 	for(i=0;i<FD_SETSIZE;i++){
@@ -86,15 +106,21 @@ void waitingMessage(int socketRecepteur, int serverSocket, struct sockaddr_in re
 		else if(FD_ISSET(serverSocket,&pset)){
 			int num;
 			char buffer[200]="\0";
-			if (num = recv(serverSocket, buffer,sizeof(buffer),0)!= -1)
-			{
-				if (strcmp(buffer,"jeton")==0)
-				{
+			if (num = recv(serverSocket, buffer,sizeof(buffer),0)!= -1){
+				if (strcmp(buffer,"jeton")==0){
 					printf("%s\n",buffer);
 					goOn=0;
 					jeton=1;
+				}else if(strcmp(buffer,"okdeco")==0){
+					if (setsockopt(socketRecepteur,IPPROTO_IP,IP_DROP_MEMBERSHIP,(struct ip_mreq*)&imr, sizeof(imr)) <0){
+						perror ("setsockopt1");
+						exit (1);
+					}
+					jeton=0;
+					participate=0;
+					disconnected=1;
+					
 				}
-				
 			}
 		}
 	}
@@ -106,8 +132,14 @@ void sendMessage(int socketEmet,int serverSocket,struct sockaddr_in emetteur_add
 	scanf("%s",mot);
 	if ((strcmp(mot,"l") == 0)){
 		send(serverSocket, "l",1, 0);
-		sendto(socketEmet,"fin",3,0,(struct sockaddr *)&emetteur_addr, sizeof(emetteur_addr));
+		sendto(socketEmet,"Token transmitted to a new client",33,0,(struct sockaddr *)&emetteur_addr, sizeof(emetteur_addr));
 		jeton=0;
+	}else if ((strcmp(mot,"d") == 0)){
+		send(serverSocket,"d",1,0);
+		sendto(socketEmet,"User disconnected from the server",33,0,(struct sockaddr *)&emetteur_addr, sizeof(emetteur_addr));
+		jeton=0;
+		participate=0;
+		disconnected=1;
 	}else if ((strcmp(mot,"v") == 0)){
 		send(serverSocket, "v",1, 0);
 	}else{
@@ -183,22 +215,6 @@ int main(int argc,char *argv[]) {
 
     freeaddrinfo(result);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     /**socket pour multicast cote emetteur**/
 	/* 
 	* Remplir la structure  serv_addr avec l'adresse du serveur 
@@ -267,33 +283,31 @@ int main(int argc,char *argv[]) {
 	}
 	/**-------------FIN initialisation recepteur----------**/
 
-
+	disconnected=0;
 	/**instruction**/
 	printf("now you are connected to the server\n");
 	printf("====INSTRUCTION====\n");
 	printf("press 'p' to participate to the lecturer\n");
 	printf("press 'l' to let the token\n");
 	printf("press 'd' to deconnect to the server\n");
-	int participate=0;
 	
 	int count=0;
-	for(;;)
-	{
+	for(;;){
 
 
-		if (!participate)
-		{
-
-			participateRequest(&participate,serverSocket,&jeton);
-		}
-		else 
-		{
-			if (!jeton)//si tu n'as pas de jeton tu ne parles pas tu attends un message
-			{
-				waitingMessage(socketRecepteur,serverSocket, receveur_addr);
+		if (!participate){
+			if(disconnected){
+				quitApp(serverSocket,socketRecepteur,socketEmetteur);
+			}else {
+				participateRequest(serverSocket,socketRecepteur,&jeton,imr);
 			}
-			else if (jeton)//si tu as un jeton tu parles
-			{
+		}else{
+			if (!jeton){
+			//si tu n'as pas de jeton tu ne parles pas tu attends un message
+				waitingMessage(socketRecepteur,serverSocket, receveur_addr,imr);
+			}
+			else if (jeton){
+			//si tu as un jeton tu parles
 				sendMessage(socketEmetteur,serverSocket,emetteur_addr);
 			}
 		}

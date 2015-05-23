@@ -48,6 +48,19 @@ int str_echo (int sockfd, int nextsockcli) {
 				write(sockfd,"okn",3);
 			}
 
+		}else if(strcmp(buffer,"ahc")==0){
+
+			printf("you press %s so the server is checking if you can participate to the lecture\n",buffer);
+			printf("The client %d ask to participate to the lecture\n",sockfd);
+			if (premier==0){
+			//c'est le premier participant on lui donne le jeton par dÃ©faut
+				write(sockfd,"okj",3);
+				leader=sockfd;
+			}else{
+			//c'est un participant en plus on ne lui donne pas le jeton il devra le demander
+				write(sockfd,"okn",3);
+			}
+
 		}else if(strcmp(buffer,"l")==0){
 			printf("the client %d leave the token\n",sockfd);
 			//passer le jeton en cherchant le prochain descripteur
@@ -60,12 +73,24 @@ int str_echo (int sockfd, int nextsockcli) {
 				send (nextsockcli,"jeton",5,0);
 				printf("j'envoie le jeton a %d\n",nextsockcli);
 			}
-		}if(strcmp(buffer,"d")==0){
+		}else if(strcmp(buffer,"d")==0){
+			leader = nextsockcli;
 			printf("the client %d wants to disconnect\n",sockfd);
+			printf("Connection closed\n");
+			send (nextsockcli,"jeton",5,0);
+			send (sockfd,"okdeco",6,0);
+			printf("j'envoie le jeton a %d\n",nextsockcli);
+			return 0;
+			
 		}
 
 	}else if (num == 0){
+		leader = nextsockcli;
+		printf("the client %d wants to disconnect\n",sockfd);
 		printf("Connection closed\n");
+		send (nextsockcli,"jeton",5,0);
+		send (sockfd,"okdeco",6,0);
+		printf("j'envoie le jeton a %d\n",nextsockcli);
 		return 0;
 	}else{
 		perror("recv");
@@ -190,23 +215,44 @@ int main (int argc,char *argv[]){
             if(((sockcli = tab_clients[i]) >= 0) && (FD_ISSET(sockcli,&pset))) {
                 printf("--sockcli= %d--\n",sockcli);
                 int nextsockcli;
+                int z;
+                printf("k=%d;",k);
+                for(z=0; z<10;z++) printf("%d:",tab_clients[z]);
+                printf("end\n");
+
                 if(k == 0){
                 	nextsockcli = sockcli;
                 }else if(i == k){
                 	nextsockcli = tab_clients[0];
-                }else {
+                }else{
                 	nextsockcli = tab_clients[i+1];
                 }
 
                 if(str_echo(sockcli,nextsockcli) == 0){
 
-                    /*close(sockcli);
-                    tab_clients[i] = -1;
+
+                	int w = i;
+                	k--;
+                	while(tab_clients[w+1] > 0){
+                		tab_clients[w] = tab_clients[w+1];
+                		w++;
+                	}
+                	tab_clients[w]=-1;
+                	printf("k=%d;",k);
+                	for(z=0; z<10;z++) printf("%d:",tab_clients[z]);
+
+                    close(sockcli);
                     FD_CLR(sockcli,&rset);
-                    */
+
                 }
                 nbr--;
+                
                 premier=1;
+
+                if(k==-1){
+                		premier=0;
+                }
+                
             }
             i++;
         }
